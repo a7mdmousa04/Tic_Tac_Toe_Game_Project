@@ -24,12 +24,12 @@ MainWindow::MainWindow(UserAuth* auth, QWidget *parent)
     // Setup all pages
     setupLoginPage();
     setupSignupPage();
-    
+    setupMenuPage();
 
     // Add pages to stacked widget
     stackedWidget->addWidget(loginPage);
     stackedWidget->addWidget(signupPage);
-   
+    stackedWidget->addWidget(menuPage);
 
     // Connect signals from game logic
     connect(gameLogic, &GameLogic::boardChanged, this, &MainWindow::updateBoard);
@@ -150,3 +150,49 @@ void MainWindow::setupSignupPage()
     connect(signupButton, &QPushButton::clicked, this, &MainWindow::handleSignup);
     connect(goToLoginButton, &QPushButton::clicked, this, &MainWindow::showLoginPage);
 }
+
+void MainWindow::setupMenuPage()
+{
+    menuPage = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(menuPage);
+
+    QLabel* titleLabel = new QLabel("Advanced Tic Tac Toe");
+    titleLabel->setAlignment(Qt::AlignCenter);
+    QFont titleFont = titleLabel->font();
+    titleFont.setPointSize(18);
+    titleFont.setBold(true);
+    titleLabel->setFont(titleFont);
+
+    welcomeLabel = new QLabel("Welcome!");
+    welcomeLabel->setAlignment(Qt::AlignCenter);
+    QFont welcomeFont = welcomeLabel->font();
+    welcomeFont.setPointSize(14);
+    welcomeLabel->setFont(welcomeFont);
+
+    playButton = new QPushButton("Play");
+    playButton->setStyleSheet("background-color: #4CAF50; color: white; font-size: 16px;");
+    playButton->setMinimumHeight(50);
+
+    historyButton = new QPushButton("Game History");
+    historyButton->setStyleSheet("background-color: #2196F3; color: white; font-size: 16px;");
+    historyButton->setMinimumHeight(50);
+
+    logoutButton = new QPushButton("Logout");
+    logoutButton->setStyleSheet("background-color: #f44336; color: white; font-size: 14px;");
+
+    layout->addWidget(titleLabel);
+    layout->addWidget(welcomeLabel);
+    layout->addSpacing(20);
+    layout->addWidget(playButton);
+    layout->addSpacing(10);
+    layout->addWidget(historyButton);
+    layout->addSpacing(20);
+    layout->addWidget(logoutButton);
+    layout->addStretch();
+
+    // Connect signals
+    connect(playButton, &QPushButton::clicked, this, &MainWindow::showGameModePage);
+    connect(historyButton, &QPushButton::clicked, this, &MainWindow::showHistoryPage);
+    connect(logoutButton, &QPushButton::clicked, this, &MainWindow::handleLogout);
+}
+
