@@ -76,4 +76,11 @@ private:
    
 };
 
+// Menu page widgets
+    QWidget* menuPage;
+    QPushButton* playButton;
+    QPushButton* historyButton;
+    QPushButton* logoutButton;
+    QLabel* welcomeLabel;
+
 #endif // MAINWINDOW_H
