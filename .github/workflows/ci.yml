@@ -1,22 +1,51 @@
-name: C++ CI
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build and Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install C++ tools
-      run: sudo apt update && sudo apt install -y g++
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential ninja-build
 
-    - name: Compile Hello World
-      run: |
-        echo '#include <iostream>\nint main() { std::cout << "Hello, GitHub Actions!\\n"; return 0; }' > main.cpp
-        g++ main.cpp -o main
-        ./main
+      - name: Install system dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: choco install cmake ninja
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.5.2'
+
+      - name: Configure with CMake
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure -C Release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: tic-tac-toe-binaries
+          path: build/src/tictactoe*
