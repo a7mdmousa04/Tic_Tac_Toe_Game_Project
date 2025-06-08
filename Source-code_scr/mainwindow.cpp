@@ -196,4 +196,41 @@ void MainWindow::setupMenuPage()
     connect(logoutButton, &QPushButton::clicked, this, &MainWindow::handleLogout);
 }
 
+void MainWindow::setupGameModePage()
+{
+    gameModePage = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(gameModePage);
+
+    QLabel* titleLabel = new QLabel("Choose Game Mode");
+    titleLabel->setAlignment(Qt::AlignCenter);
+    QFont titleFont = titleLabel->font();
+    titleFont.setPointSize(18);
+    titleFont.setBold(true);
+    titleLabel->setFont(titleFont);
+
+    twoPlayerButton = new QPushButton("Player vs Player");
+    twoPlayerButton->setStyleSheet("background-color: #FF9800; color: white; font-size: 16px;");
+    twoPlayerButton->setMinimumHeight(60);
+
+    aiButton = new QPushButton("Player vs AI");
+    aiButton->setStyleSheet("background-color: #9C27B0; color: white; font-size: 16px;");
+    aiButton->setMinimumHeight(60);
+
+    backToMenuFromGameModeButton = new QPushButton("Back to Menu");
+    backToMenuFromGameModeButton->setStyleSheet("color: #424242;");
+
+    layout->addWidget(titleLabel);
+    layout->addSpacing(20);
+    layout->addWidget(twoPlayerButton);
+    layout->addSpacing(10);
+    layout->addWidget(aiButton);
+    layout->addSpacing(20);
+    layout->addWidget(backToMenuFromGameModeButton);
+    layout->addStretch();
+
+    // Connect signals
+    connect(twoPlayerButton, &QPushButton::clicked, this, &MainWindow::startTwoPlayerGame);
+    connect(aiButton, &QPushButton::clicked, this, &MainWindow::startAIGame);
+    connect(backToMenuFromGameModeButton, &QPushButton::clicked, this, &MainWindow::showMenuPage);
+}
 
