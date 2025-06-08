@@ -1,0 +1,22 @@
+name: C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install C++ tools
+      run: sudo apt update && sudo apt install -y g++
+
+    - name: Compile Hello World
+      run: |
+        echo '#include <iostream>\nint main() { std::cout << "Hello, GitHub Actions!\\n"; return 0; }' > main.cpp
+        g++ main.cpp -o main
+        ./main
