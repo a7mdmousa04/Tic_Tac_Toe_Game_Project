@@ -70,17 +70,26 @@ private:
     QPushButton* goToLoginButton;
     QLabel* signupStatusLabel;
 
-   
-    void setupLoginPage();
-    void setupSignupPage();
-   
-};
-
-// Menu page widgets
+     // Menu page widgets
     QWidget* menuPage;
     QPushButton* playButton;
     QPushButton* historyButton;
     QPushButton* logoutButton;
     QLabel* welcomeLabel;
+
+    // Game mode page widgets
+    QWidget* gameModePage;
+    QPushButton* twoPlayerButton;
+    QPushButton* aiButton;
+    QPushButton* backToMenuFromGameModeButton;
+
+   
+    void setupLoginPage();
+    void setupSignupPage();
+    void setupMenuPage();
+    void setupGameModePage();
+   
+};
+
 
 #endif // MAINWINDOW_H
