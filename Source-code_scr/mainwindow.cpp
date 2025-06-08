@@ -196,3 +196,4 @@ void MainWindow::setupMenuPage()
     connect(logoutButton, &QPushButton::clicked, this, &MainWindow::handleLogout);
 }
 
+
