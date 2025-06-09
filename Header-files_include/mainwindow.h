@@ -83,12 +83,31 @@ private:
     QPushButton* aiButton;
     QPushButton* backToMenuFromGameModeButton;
 
+    // Game page widgets
+    QWidget* gamePage;
+    QLabel* gameStatusLabel;
+    QPushButton* backToMenuFromGameButton;
+    QPushButton* boardButtons[3][3];
+    QGridLayout* boardLayout;
+
+    // History page widgets
+    QWidget* historyPage;
+    QListWidget* gamesList;
+    QPushButton* loadGameButton;
+    QPushButton* backToMenuFromHistoryButton;
+    QLabel* replayStatusLabel;
+    QSlider* replaySlider;
+    QPushButton* previousMoveButton;
+    QPushButton* nextMoveButton;
+    QPushButton* boardReplayButtons[3][3];
+    QGridLayout* replayBoardLayout;
    
     void setupLoginPage();
     void setupSignupPage();
     void setupMenuPage();
     void setupGameModePage();
-   
+    void setupGamePage();
+    void setupHistoryPage();
 };
 
 
