@@ -108,7 +108,9 @@ private:
     void setupGameModePage();
     void setupGamePage();
     void setupHistoryPage();
+     void updateBoardButtons();
+    void updateReplayBoardButtons();
+    void loadGameHistory();
 };
-
 
 #endif // MAINWINDOW_H

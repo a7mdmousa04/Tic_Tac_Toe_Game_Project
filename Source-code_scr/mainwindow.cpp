@@ -358,3 +358,151 @@ void MainWindow::setupHistoryPage()
     connect(previousMoveButton, &QPushButton::clicked, this, &MainWindow::playPreviousMove);
     connect(nextMoveButton, &QPushButton::clicked, this, &MainWindow::playNextMove);
 }
+
+void MainWindow::handleCellClicked()
+{
+    QPushButton* button = qobject_cast<QPushButton*>(sender());
+    if (button) {
+        int row = button->property("row").toInt();
+        int col = button->property("col").toInt();
+
+        gameLogic->makeMove(row, col);
+    }
+}
+
+void MainWindow::updateBoard()
+{
+    // Update the board with the current game state
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            Player cell = gameLogic->getCell(row, col);
+            QPushButton* button = boardButtons[row][col];
+
+            if (cell == Player::X) {
+                button->setText("X");
+                button->setStyleSheet("color: blue;");
+            } else if (cell == Player::O) {
+                button->setText("O");
+                button->setStyleSheet("color: red;");
+            } else {
+                button->setText("");
+                button->setStyleSheet("");
+            }
+        }
+    }
+
+    // Update game status label
+    if (!gameLogic->isGameOver()) {
+        Player currentPlayer = gameLogic->getCurrentPlayer();
+        QString playerText = (currentPlayer == Player::X) ? "X" : "O";
+        gameStatusLabel->setText("Player " + playerText + "'s Turn");
+    }
+}
+
+void MainWindow::updateBoardButtons()
+{
+    // Update the board with the current game state
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            Player cell = gameLogic->getCell(row, col);
+            QPushButton* button = boardButtons[row][col];
+
+            if (cell == Player::X) {
+                button->setText("X");
+                button->setStyleSheet("color: blue;");
+            } else if (cell == Player::O) {
+                button->setText("O");
+                button->setStyleSheet("color: red;");
+            } else {
+                button->setText("");
+                button->setStyleSheet("");
+            }
+        }
+    }
+}
+
+void MainWindow::updateReplayBoardButtons()
+{
+    // Update the replay board with the current game state
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            Player cell = gameLogic->getCell(row, col);
+            QPushButton* button = boardReplayButtons[row][col];
+
+            if (cell == Player::X) {
+                button->setText("X");
+                button->setStyleSheet("color: blue;");
+            } else if (cell == Player::O) {
+                button->setText("O");
+                button->setStyleSheet("color: red;");
+            } else {
+                button->setText("");
+                button->setStyleSheet("");
+            }
+        }
+    }
+}
+
+void MainWindow::handleGameEnd(Player winner)
+{
+    QString resultText;
+
+    if (winner == Player::None) {
+        resultText = "Game Over - It's a Tie!";
+    } else {
+        QString winnerText = (winner == Player::X) ? "X" : "O";
+        resultText = "Game Over - Player " + winnerText + " Wins!";
+    }
+
+    gameStatusLabel->setText(resultText);
+
+    // Save game to history
+    if (userAuth->isLoggedIn()) {
+        QJsonObject gameData = gameLogic->getGameAsJson();
+        userAuth->saveGameToHistory(gameData);
+    }
+}
+
+void MainWindow::showLoginPage()
+{
+    loginUsername->clear();
+    loginPassword->clear();
+    loginStatusLabel->clear();
+    stackedWidget->setCurrentWidget(loginPage);
+}
+
+void MainWindow::showSignupPage()
+{
+    signupUsername->clear();
+    signupPassword->clear();
+    signupConfirmPassword->clear();
+    signupStatusLabel->clear();
+    stackedWidget->setCurrentWidget(signupPage);
+}
+
+void MainWindow::showMenuPage()
+{
+    if (userAuth->isLoggedIn()) {
+        welcomeLabel->setText("Welcome, " + userAuth->getCurrentUser() + "!");
+        stackedWidget->setCurrentWidget(menuPage);
+    } else {
+        showLoginPage();
+    }
+}
+
+void MainWindow::showGamePage()
+{
+    updateBoardButtons();
+    stackedWidget->setCurrentWidget(gamePage);
+}
+
+void MainWindow::showGameModePage()
+{
+    stackedWidget->setCurrentWidget(gameModePage);
+}
+
+void MainWindow::showHistoryPage()
+{
+    loadGameHistory();
+    stackedWidget->setCurrentWidget(historyPage);
+}
