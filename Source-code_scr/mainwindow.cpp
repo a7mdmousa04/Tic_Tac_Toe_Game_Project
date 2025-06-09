@@ -506,3 +506,165 @@ void MainWindow::showHistoryPage()
     loadGameHistory();
     stackedWidget->setCurrentWidget(historyPage);
 }
+
+void MainWindow::handleLogin()
+{
+    QString username = loginUsername->text();
+    QString password = loginPassword->text();
+
+    if (username.isEmpty() || password.isEmpty()) {
+        loginStatusLabel->setText("Please enter both username and password.");
+        return;
+    }
+
+    if (userAuth->signIn(username, password)) {
+        showMenuPage();
+    } else {
+        loginStatusLabel->setText("Invalid username or password.");
+    }
+}
+
+void MainWindow::handleSignup()
+{
+    QString username = signupUsername->text();
+    QString password = signupPassword->text();
+    QString confirmPassword = signupConfirmPassword->text();
+
+    if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+        signupStatusLabel->setText("Please fill in all fields.");
+        return;
+    }
+
+    if (password != confirmPassword) {
+        signupStatusLabel->setText("Passwords do not match.");
+        return;
+    }
+
+    if (userAuth->signUp(username, password)) {
+        QMessageBox::information(this, "Success", "Account created successfully. Please log in.");
+        showLoginPage();
+    } else {
+        signupStatusLabel->setText("Username already exists.");
+    }
+}
+
+void MainWindow::handleLogout()
+{
+    userAuth->signOut();
+    showLoginPage();
+}
+
+void MainWindow::startTwoPlayerGame()
+{
+    gameLogic->newGame(false); // Start game with 2 players
+    showGamePage();
+}
+
+void MainWindow::startAIGame()
+{
+    gameLogic->newGame(true); // Start game with AI
+    showGamePage();
+}
+
+void MainWindow::loadGameHistory()
+{
+    gamesList->clear();
+
+    if (!userAuth->isLoggedIn()) {
+        return;
+    }
+
+    QJsonArray history = userAuth->getGameHistory();
+
+    for (int i = 0; i < history.size(); ++i) {
+        QJsonObject gameData = history[i].toObject();
+        QString date = gameData["date"].toString();
+        QString result = gameData["result"].toString();
+        QString vsAI = gameData["vsAI"].toBool() ? "vs AI" : "vs Player";
+
+        QListWidgetItem* item = new QListWidgetItem(QString("%1 - %2 (%3)").arg(date).arg(result).arg(vsAI));
+        item->setData(Qt::UserRole, i); // Store the game index
+        gamesList->addItem(item);
+    }
+}
+
+void MainWindow::loadSelectedGame()
+{
+    QListWidgetItem* selectedItem = gamesList->currentItem();
+    if (!selectedItem) {
+        return;
+    }
+
+    int gameIndex = selectedItem->data(Qt::UserRole).toInt();
+    QJsonArray history = userAuth->getGameHistory();
+
+    if (gameIndex >= 0 && gameIndex < history.size()) {
+        QJsonObject gameData = history[gameIndex].toObject();
+
+        // Load game into game logic
+        gameLogic->loadFromJson(gameData);
+
+        // Setup replay controls
+        QJsonArray movesArray = gameData["moves"].toArray();
+        replaySlider->setMinimum(0);
+        replaySlider->setMaximum(movesArray.size());
+        replaySlider->setValue(movesArray.size());
+        replaySlider->setEnabled(true);
+
+        // Update status
+        QString vsAI = gameData["vsAI"].toBool() ? "vs AI" : "vs Player";
+        replayStatusLabel->setText(QString("Replaying game from %1 (%2)").arg(gameData["date"].toString()).arg(vsAI));
+
+        // Update board
+        updateReplayBoardButtons();
+    }
+}
+
+void MainWindow::updateReplay(int value)
+{
+    gameLogic->replayMove(value);
+    updateReplayBoardButtons();
+
+    // Update status
+    QVector<Move> moves = gameLogic->getMoves();
+    if (value == 0) {
+        replayStatusLabel->setText("Game start");
+    } else if (value == moves.size()) {
+        QString endText = "Game end - ";
+        if (gameLogic->getWinner() == Player::None) {
+            endText += "Tie";
+        } else if (gameLogic->getWinner() == Player::X) {
+            endText += "X wins";
+        } else {
+            endText += "O wins";
+        }
+        replayStatusLabel->setText(endText);
+    } else {
+        Player lastMovePlayer = (value % 2 == 1) ? Player::X : Player::O;
+        QString playerText = (lastMovePlayer == Player::X) ? "X" : "O";
+        replayStatusLabel->setText("Move " + QString::number(value) + " - Player " + playerText);
+    }
+}
+
+void MainWindow::playNextMove()
+{
+    if (replaySlider->isEnabled()) {
+        int currentValue = replaySlider->value();
+        int maxValue = replaySlider->maximum();
+
+        if (currentValue < maxValue) {
+            replaySlider->setValue(currentValue + 1);
+        }
+    }
+}
+
+void MainWindow::playPreviousMove()
+{
+    if (replaySlider->isEnabled()) {
+        int currentValue = replaySlider->value();
+
+        if (currentValue > 0) {
+            replaySlider->setValue(currentValue - 1);
+        }
+    }
+}
