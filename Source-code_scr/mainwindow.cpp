@@ -234,3 +234,127 @@ void MainWindow::setupGameModePage()
     connect(backToMenuFromGameModeButton, &QPushButton::clicked, this, &MainWindow::showMenuPage);
 }
 
+void MainWindow::setupGamePage()
+{
+    gamePage = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(gamePage);
+
+    // Game status label
+    gameStatusLabel = new QLabel("Player X's Turn");
+    gameStatusLabel->setAlignment(Qt::AlignCenter);
+    QFont statusFont = gameStatusLabel->font();
+    statusFont.setPointSize(16);
+    gameStatusLabel->setFont(statusFont);
+
+    // Create board layout and buttons
+    QWidget* boardWidget = new QWidget();
+    boardLayout = new QGridLayout(boardWidget);
+    boardLayout->setSpacing(5);
+
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            boardButtons[row][col] = new QPushButton("");
+            boardButtons[row][col]->setFixedSize(80, 80);
+            QFont buttonFont = boardButtons[row][col]->font();
+            buttonFont.setPointSize(24);
+            buttonFont.setBold(true);
+            boardButtons[row][col]->setFont(buttonFont);
+            boardButtons[row][col]->setProperty("row", row);
+            boardButtons[row][col]->setProperty("col", col);
+
+            connect(boardButtons[row][col], &QPushButton::clicked, this, &MainWindow::handleCellClicked);
+
+            boardLayout->addWidget(boardButtons[row][col], row, col);
+        }
+    }
+
+    // Back to menu button
+    backToMenuFromGameButton = new QPushButton("Back to Menu");
+    backToMenuFromGameButton->setStyleSheet("color: #424242;");
+
+    layout->addWidget(gameStatusLabel);
+    layout->addSpacing(10);
+    layout->addWidget(boardWidget, 0, Qt::AlignCenter);
+    layout->addSpacing(20);
+    layout->addWidget(backToMenuFromGameButton);
+
+    // Connect signals
+    connect(backToMenuFromGameButton, &QPushButton::clicked, this, &MainWindow::showMenuPage);
+}
+
+void MainWindow::setupHistoryPage()
+{
+    historyPage = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(historyPage);
+
+    QLabel* titleLabel = new QLabel("Game History");
+    titleLabel->setAlignment(Qt::AlignCenter);
+    QFont titleFont = titleLabel->font();
+    titleFont.setPointSize(18);
+    titleFont.setBold(true);
+    titleLabel->setFont(titleFont);
+
+    // Game list
+    gamesList = new QListWidget();
+    gamesList->setAlternatingRowColors(true);
+
+    // Buttons for managing history
+    QHBoxLayout* buttonsLayout = new QHBoxLayout();
+    loadGameButton = new QPushButton("Replay Selected Game");
+    loadGameButton->setStyleSheet("background-color: #2196F3; color: white;");
+    backToMenuFromHistoryButton = new QPushButton("Back to Menu");
+    backToMenuFromHistoryButton->setStyleSheet("color: #424242;");
+
+    buttonsLayout->addWidget(loadGameButton);
+    buttonsLayout->addWidget(backToMenuFromHistoryButton);
+
+    // Replay controls
+    QHBoxLayout* replayControlsLayout = new QHBoxLayout();
+    previousMoveButton = new QPushButton("←");
+    nextMoveButton = new QPushButton("→");
+    replaySlider = new QSlider(Qt::Horizontal);
+    replaySlider->setEnabled(false);
+
+    replayControlsLayout->addWidget(previousMoveButton);
+    replayControlsLayout->addWidget(replaySlider);
+    replayControlsLayout->addWidget(nextMoveButton);
+
+    // Replay status
+    replayStatusLabel = new QLabel("Select a game from history to replay");
+    replayStatusLabel->setAlignment(Qt::AlignCenter);
+
+    // Replay board
+    QWidget* replayBoardWidget = new QWidget();
+    replayBoardLayout = new QGridLayout(replayBoardWidget);
+    replayBoardLayout->setSpacing(5);
+
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            boardReplayButtons[row][col] = new QPushButton("");
+            boardReplayButtons[row][col]->setFixedSize(60, 60);
+            QFont buttonFont = boardReplayButtons[row][col]->font();
+            buttonFont.setPointSize(18);
+            buttonFont.setBold(true);
+            boardReplayButtons[row][col]->setFont(buttonFont);
+            boardReplayButtons[row][col]->setEnabled(false);
+
+            replayBoardLayout->addWidget(boardReplayButtons[row][col], row, col);
+        }
+    }
+
+    layout->addWidget(titleLabel);
+    layout->addSpacing(10);
+    layout->addWidget(gamesList);
+    layout->addLayout(buttonsLayout);
+    layout->addSpacing(20);
+    layout->addWidget(replayStatusLabel);
+    layout->addLayout(replayControlsLayout);
+    layout->addWidget(replayBoardWidget, 0, Qt::AlignCenter);
+
+    // Connect signals
+    connect(loadGameButton, &QPushButton::clicked, this, &MainWindow::loadSelectedGame);
+    connect(backToMenuFromHistoryButton, &QPushButton::clicked, this, &MainWindow::showMenuPage);
+    connect(replaySlider, &QSlider::valueChanged, this, &MainWindow::updateReplay);
+    connect(previousMoveButton, &QPushButton::clicked, this, &MainWindow::playPreviousMove);
+    connect(nextMoveButton, &QPushButton::clicked, this, &MainWindow::playNextMove);
+}
