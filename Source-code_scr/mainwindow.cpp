@@ -25,11 +25,17 @@ MainWindow::MainWindow(UserAuth* auth, QWidget *parent)
     setupLoginPage();
     setupSignupPage();
     setupMenuPage();
+    setupGameModePage();
+    setupGamePage();
+    setupHistoryPage();
 
     // Add pages to stacked widget
     stackedWidget->addWidget(loginPage);
     stackedWidget->addWidget(signupPage);
     stackedWidget->addWidget(menuPage);
+    stackedWidget->addWidget(gameModePage);
+    stackedWidget->addWidget(gamePage);
+    stackedWidget->addWidget(historyPage);
 
     // Connect signals from game logic
     connect(gameLogic, &GameLogic::boardChanged, this, &MainWindow::updateBoard);
