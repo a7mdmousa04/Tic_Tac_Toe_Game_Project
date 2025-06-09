@@ -108,7 +108,7 @@ private:
     void setupGameModePage();
     void setupGamePage();
     void setupHistoryPage();
-     void updateBoardButtons();
+    void updateBoardButtons();
     void updateReplayBoardButtons();
     void loadGameHistory();
 };
