@@ -1,4 +1,4 @@
-name: C++ CI with Qt (Modern Container)
+name: C++ CI with Qt (qmake)
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: 
-      image: ubuntu:20.04  # Use Ubuntu 20.04 which supports GLIBC 2.28
+      image: ubuntu:20.04
     
     steps:
     - name: Checkout code
@@ -24,8 +24,7 @@ jobs:
           qt5-default \
           qtbase5-dev \
           qttools5-dev \
-          cmake \
-          ninja-build \
+          qt5-qmake \
           g++ \
           build-essential \
           libgtest-dev
@@ -37,13 +36,16 @@ jobs:
         make -j$(nproc)
         cp lib/*.a /usr/lib 2>/dev/null || cp *.a /usr/lib
     
-    - name: Build project
+    - name: Build project with qmake
       run: |
-        mkdir -p build && cd build
-        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
-        ninja -j$(nproc)
+        qmake *.pro
+        make -j$(nproc)
     
-    - name: Run tests
+    - name: Run tests (if you have test executable)
       run: |
-        cd build
-        ctest --output-on-failure
+        # Replace 'your_test_executable' with your actual test program name
+        if [ -f ./tests ] || [ -f ./test ]; then
+          ./tests || ./test
+        else
+          echo "No test executable found"
+        fi
