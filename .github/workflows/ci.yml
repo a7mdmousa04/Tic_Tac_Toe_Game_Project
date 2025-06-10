@@ -1,1 +1,58 @@
+name: C++ CI with Qt
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '5.15.2'
+        host: 'linux'
+        target: 'desktop'
+        install-deps: 'true'
+        cache: 'true'
+        setup-python: 'false'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ build-essential
+        sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0
+        sudo apt-get install -y libgtest-dev
+    
+    - name: Install Google Test
+      run: |
+        cd /usr/src/gtest
+        sudo cmake CMakeLists.txt
+        sudo make
+        sudo cp lib/*.a /usr/lib
+    
+    - name: Create build directory
+      run: mkdir build
+    
+    - name: Configure CMake
+      run: |
+        cd build
+        cmake -DCMAKE_PREFIX_PATH=$Qt5_DIR ..
+    
+    - name: Build project
+      run: |
+        cd build
+        make -j$(nproc)
+    
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
 
