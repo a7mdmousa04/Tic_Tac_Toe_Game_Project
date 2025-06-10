@@ -1,4 +1,4 @@
-name: C++ CI with Qt (qmake)
+name: C++ CI with Qt (qmake - Fixed)
 
 on:
   push:
@@ -25,6 +25,7 @@ jobs:
           qtbase5-dev \
           qttools5-dev \
           qt5-qmake \
+          cmake \
           g++ \
           build-essential \
           libgtest-dev
@@ -43,10 +44,9 @@ jobs:
     
     - name: Run tests (if you have test executable)
       run: |
-        # Replace 'your_test_executable' with your actual test program name
+        # Replace with your actual test program name
         if [ -f ./tests ] || [ -f ./test ]; then
           ./tests || ./test
         else
           echo "No test executable found"
         fi
-
