@@ -49,3 +49,4 @@ jobs:
         else
           echo "No test executable found"
         fi
+
