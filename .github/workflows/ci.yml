@@ -1,4 +1,4 @@
-name: C++ CI with Qt (Optimized)
+name: C++ CI with Qt (Robust)
 
 on:
   push:
@@ -14,40 +14,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Cache Qt installation
-      id: cache-qt
-      uses: actions/cache@v4
+    - name: Setup Python
+      uses: actions/setup-python@v4
       with:
-        path: |
-          ${{ runner.workspace }}/Qt
-          ~/.cache/pip
-        key: ${{ runner.os }}-qt-5.15.2-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-qt-5.15.2-
-          ${{ runner.os }}-qt-
+        python-version: '3.x'
     
-    - name: Install Qt
+    - name: Install Qt with fallback
       uses: jurplel/install-qt-action@v4
       with:
         version: '5.15.2'
         host: 'linux'
         target: 'desktop'
+        arch: 'gcc_64'
         modules: 'qtbase qttools qtwidgets'
         install-deps: 'true'
         cache: 'true'
         cache-key-prefix: 'install-qt-action'
-        setup-python: 'false'
-        tools: 'tools_cmake'
-    
-    - name: Cache system dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          /var/cache/apt
-          /var/lib/apt
-        key: ${{ runner.os }}-apt-${{ hashFiles('**/.github/workflows/*.yml') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-
+        setup-python: 'true'
+        py7zrversion: '>=0.20.2'
+        extra: '--base https://mirrors.ocf.berkeley.edu/qt/ --timeout 60'
     
     - name: Install system dependencies
       run: |
@@ -61,30 +46,12 @@ jobs:
           libgtest-dev \
           ninja-build
     
-    - name: Cache Google Test build
-      uses: actions/cache@v4
-      with:
-        path: /usr/lib/libgtest*.a
-        key: ${{ runner.os }}-gtest-${{ hashFiles('/usr/src/gtest/**') }}
-    
     - name: Install Google Test
       run: |
-        if [ ! -f /usr/lib/libgtest.a ]; then
-          cd /usr/src/gtest
-          sudo cmake CMakeLists.txt
-          sudo make -j$(nproc)
-          sudo cp lib/*.a /usr/lib || sudo cp *.a /usr/lib
-        fi
-    
-    - name: Cache CMake build
-      uses: actions/cache@v4
-      with:
-        path: |
-          build
-          ~/.cmake
-        key: ${{ runner.os }}-cmake-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-cmake-
+        cd /usr/src/gtest
+        sudo cmake CMakeLists.txt
+        sudo make -j$(nproc)
+        sudo cp lib/*.a /usr/lib 2>/dev/null || sudo cp *.a /usr/lib
     
     - name: Create build directory
       run: mkdir -p build
@@ -95,7 +62,6 @@ jobs:
         cmake -G Ninja \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_PREFIX_PATH=$Qt5_DIR \
-              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
               ..
     
     - name: Build project
@@ -107,14 +73,3 @@ jobs:
       run: |
         cd build
         ctest --output-on-failure --parallel $(nproc)
-    
-    - name: Upload build artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: |
-          build/
-          !build/**/*.o
-          !build/**/*.a
-        retention-days: 7
