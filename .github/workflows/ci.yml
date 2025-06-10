@@ -1,4 +1,4 @@
-name: C++ CI with Qt 6 (qmake)
+name: C++ CI with Qt 6 (qmake - Fixed)
 
 on:
   push:
@@ -8,36 +8,71 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-22.04  # Removed container, using ubuntu-22.04 for better Qt 6 support
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
+    
     - name: Install Qt 6 and dependencies
       run: |
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update -qq
-        apt-get install -y --no-install-recommends \
-          qt6-base-dev qt6-tools-dev qt6-l10n-tools qt6-qmake \
-          cmake g++ build-essential libgtest-dev
-
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+          qt6-base-dev \
+          qt6-tools-dev \
+          qt6-l10n-tools \
+          qmake6 \
+          cmake \
+          g++ \
+          build-essential \
+          libgtest-dev \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          libfontconfig1 \
+          libsqlite3-dev
+    
     - name: Install Google Test
       run: |
         cd /usr/src/gtest
-        cmake CMakeLists.txt
-        make -j$(nproc)
-        cp lib/*.a /usr/lib 2>/dev/null || cp *.a /usr/lib
-
-    - name: Build project with qt6-qmake
+        sudo cmake CMakeLists.txt
+        sudo make -j$(nproc)
+        sudo cp lib/*.a /usr/lib 2>/dev/null || sudo cp *.a /usr/lib
+    
+    - name: Verify Qt 6 installation
       run: |
-        qt6-qmake *.pro
+        qmake6 --version
+        which qmake6
+    
+    - name: Build project with qmake6
+      run: |
+        qmake6 Embedded.pro
         make -j$(nproc)
-
+    
     - name: Run tests (if you have test executable)
       run: |
-        if [ -f ./tests ] || [ -f ./test ]; then
-          ./tests || ./test
+        # Look for common test executable names
+        if [ -f ./tests ]; then
+          echo "Running tests executable"
+          ./tests
+        elif [ -f ./test ]; then
+          echo "Running test executable"  
+          ./test
+        elif [ -f ./Embedded_tests ]; then
+          echo "Running Embedded_tests executable"
+          ./Embedded_tests
         else
-          echo "No test executable found"
+          echo "No test executable found - checking for binary files:"
+          ls -la ./ | grep -E "\.(out|exe|bin)$" || echo "No executable files found"
+          echo "Build completed successfully but no tests to run"
         fi
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-artifacts
+        path: |
+          Embedded
+          *.o
+          Makefile
+        retention-days: 7
