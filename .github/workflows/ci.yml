@@ -1,4 +1,4 @@
-name: C++ CI with Qt (qmake - Fixed)
+name: C++ CI with Qt 6 (qmake)
 
 on:
   push:
@@ -8,43 +8,34 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container: 
-      image: ubuntu:20.04
-    
+    runs-on: ubuntu-22.04
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
-    - name: Install Qt and dependencies
+
+    - name: Install Qt 6 and dependencies
       run: |
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq
         apt-get install -y --no-install-recommends \
-          qt5-default \
-          qtbase5-dev \
-          qttools5-dev \
-          qt5-qmake \
-          cmake \
-          g++ \
-          build-essential \
-          libgtest-dev
-    
+          qt6-base-dev qt6-tools-dev qt6-l10n-tools qt6-qmake \
+          cmake g++ build-essential libgtest-dev
+
     - name: Install Google Test
       run: |
         cd /usr/src/gtest
         cmake CMakeLists.txt
         make -j$(nproc)
         cp lib/*.a /usr/lib 2>/dev/null || cp *.a /usr/lib
-    
-    - name: Build project with qmake
+
+    - name: Build project with qt6-qmake
       run: |
-        qmake *.pro
+        qt6-qmake *.pro
         make -j$(nproc)
-    
+
     - name: Run tests (if you have test executable)
       run: |
-        # Replace with your actual test program name
         if [ -f ./tests ] || [ -f ./test ]; then
           ./tests || ./test
         else
