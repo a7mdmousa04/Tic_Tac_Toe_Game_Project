@@ -1,4 +1,4 @@
-name: C++ CI with Qt (Docker - Fixed)
+name: C++ CI with Qt (Modern Container)
 
 on:
   push:
@@ -6,27 +6,29 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
     container: 
-      image: rabits/qt:5.15-desktop
+      image: ubuntu:20.04  # Use Ubuntu 20.04 which supports GLIBC 2.28
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3  # Use v3 instead of v4
+      uses: actions/checkout@v4
     
-    - name: Install build dependencies
+    - name: Install Qt and dependencies
       run: |
+        export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq
         apt-get install -y --no-install-recommends \
+          qt5-default \
+          qtbase5-dev \
+          qttools5-dev \
           cmake \
           ninja-build \
-          libgtest-dev \
-          build-essential
+          g++ \
+          build-essential \
+          libgtest-dev
     
     - name: Install Google Test
       run: |
@@ -35,22 +37,13 @@ jobs:
         make -j$(nproc)
         cp lib/*.a /usr/lib 2>/dev/null || cp *.a /usr/lib
     
-    - name: Create build directory
-      run: mkdir -p build
-    
-    - name: Configure CMake
-      run: |
-        cd build
-        cmake -G Ninja \
-              -DCMAKE_BUILD_TYPE=Release \
-              ..
-    
     - name: Build project
       run: |
-        cd build
+        mkdir -p build && cd build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
         ninja -j$(nproc)
     
     - name: Run tests
       run: |
         cd build
-        ctest --output-on-failure --parallel $(nproc)
+        ctest --output-on-failure
