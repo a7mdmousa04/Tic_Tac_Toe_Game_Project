@@ -1,4 +1,4 @@
-name: C++ CI with Qt (Robust)
+name: C++ CI with Qt (Docker - Reliable)
 
 on:
   push:
@@ -9,49 +9,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: 
+      image: rabits/qt:5.15-desktop
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-    
-    - name: Install Qt with fallback
-      uses: jurplel/install-qt-action@v4
-      with:
-        version: '5.15.2'
-        host: 'linux'
-        target: 'desktop'
-        arch: 'gcc_64'
-        modules: 'qtbase qttools qtwidgets'
-        install-deps: 'true'
-        cache: 'true'
-        cache-key-prefix: 'install-qt-action'
-        setup-python: 'true'
-        py7zrversion: '>=0.20.2'
-        extra: '--base https://mirrors.ocf.berkeley.edu/qt/ --timeout 60'
-    
-    - name: Install system dependencies
+    - name: Install build dependencies
       run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends \
+        apt-get update -qq
+        apt-get install -y --no-install-recommends \
           cmake \
-          g++ \
-          build-essential \
-          libgl1-mesa-dev \
-          libxkbcommon-x11-0 \
+          ninja-build \
           libgtest-dev \
-          ninja-build
+          build-essential
     
     - name: Install Google Test
       run: |
         cd /usr/src/gtest
-        sudo cmake CMakeLists.txt
-        sudo make -j$(nproc)
-        sudo cp lib/*.a /usr/lib 2>/dev/null || sudo cp *.a /usr/lib
+        cmake CMakeLists.txt
+        make -j$(nproc)
+        cp lib/*.a /usr/lib 2>/dev/null || cp *.a /usr/lib
     
     - name: Create build directory
       run: mkdir -p build
@@ -61,7 +40,6 @@ jobs:
         cd build
         cmake -G Ninja \
               -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_PREFIX_PATH=$Qt5_DIR \
               ..
     
     - name: Build project
