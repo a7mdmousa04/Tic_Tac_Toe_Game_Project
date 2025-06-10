@@ -1,6 +1,244 @@
 
 
+// gamelogic.cpp - Game Logic Implementation
+#include "gamelogic.h"
+#include <QRandomGenerator>
+#include <QJsonArray>
+#include <QJsonObject>
 
+GameLogic::GameLogic(QObject* parent) : QObject(parent),
+gameOver(false), vsAI(false), replayIndex(0), aiDifficulty(AIDifficulty::Medium) {
+    // Initialize the board
+    board.resize(3);
+    for (int i = 0; i < 3; ++i) {
+        board[i].resize(3, Player::None);
+    }
+    // Set starting player to X
+    currentPlayer = Player::X;
+}
+void GameLogic::newGame(bool vsAI) {
+    // Clear the board
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            board[i][j] = Player::None;
+        }
+    }
+
+    // Reset game state
+    currentPlayer = Player::X;
+    winner = Player::None;
+    gameOver = false;
+    this->vsAI = vsAI;
+    moves.clear();
+    replayIndex = 0;
+    startTime = QDateTime::currentDateTime();
+
+    emit boardChanged();
+}
+
+bool GameLogic::makeMove(int row, int col) {
+    // Check if move is valid
+    if (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != Player::None || gameOver) {
+        return false;
+    }
+
+    // Make the move
+    board[row][col] = currentPlayer;
+
+    // Record the move
+    Move move;
+    move.row = row;
+    move.col = col;
+    move.player = currentPlayer;
+    moves.append(move);
+
+    // Check if game is over
+    if (checkWin(row, col)) {
+        winner = currentPlayer;
+        gameOver = true;
+        emit gameEnded(winner);
+    }
+    else if (checkGameOver()) {
+        gameOver = true;
+        emit gameEnded(Player::None); // Tie
+    }
+    else {
+        // Switch player
+        switchPlayer();
+
+        // If playing against AI and it's AI's turn
+        if (vsAI && currentPlayer == Player::O && !gameOver) {
+            aiMove();
+        }
+    }
+
+    emit boardChanged();
+    return true;
+}
+void GameLogic::setDifficulty(AIDifficulty difficulty) {
+    aiDifficulty = difficulty;
+}
+
+AIDifficulty GameLogic::getDifficulty() const {
+    return aiDifficulty;
+}
+
+bool GameLogic::shouldUseOptimalMove() {
+    int probability;
+    switch (aiDifficulty) {
+    case AIDifficulty::Easy:
+        probability = 30;
+        break;
+    case AIDifficulty::Medium:
+        probability = 50;
+        break;
+    case AIDifficulty::Hard:
+        probability = 80;
+        break;
+    case AIDifficulty::Unbeatable:
+        probability = 100;
+        break;
+    default:
+        probability = 50;
+    }
+
+    // Generate a random number between 0 and 99
+    int randomNum = QRandomGenerator::global()->bounded(100);
+    return randomNum < probability;
+}
+void GameLogic::aiMove() {
+    // AI uses minimax to make a move
+    makeAIMove();
+}
+
+void GameLogic::makeAIMove() {
+    if (shouldUseOptimalMove()) {
+        // Use minimax for optimal move
+        int bestScore = -1000;
+        int bestRow = -1;
+        int bestCol = -1;
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (board[i][j] == Player::None) {
+                    // Try this move
+                    board[i][j] = Player::O;
+                    // Get score from minimax
+                    int score = minimax(board, 0, false, -1000, 1000);
+                    // Undo the move
+                    board[i][j] = Player::None;
+                    // Update best move if needed
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestRow = i;
+                        bestCol = j;
+                    }
+                }
+            }
+        }
+
+        // Make the best move
+        if (bestRow != -1 && bestCol != -1) {
+            makeMove(bestRow, bestCol);
+        }
+    }
+    else {
+        // Make a random move
+        QVector<QPair<int, int>> availableMoves = getAvailableMoves(board);
+        if (!availableMoves.isEmpty()) {
+            int randomIndex = QRandomGenerator::global()->bounded(availableMoves.size());
+            QPair<int, int> randomMove = availableMoves[randomIndex];
+            makeMove(randomMove.first, randomMove.second);
+        }
+    }
+}
+
+int GameLogic::minimax(QVector<QVector<Player>>& board, int depth, bool isMaximizing, int alpha, int beta) {
+    // Check for terminal states
+    if (isWin(board, Player::O)) {
+        return 10 - depth; // AI wins
+    }
+    if (isWin(board, Player::X)) {
+        return depth - 10; // Human wins
+    }
+
+    // Check for a tie
+    bool isFull = true;
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (board[i][j] == Player::None) {
+                isFull = false;
+                break;
+            }
+        }
+        if (!isFull) break;
+    }
+
+    if (isFull) {
+        return 0; // Tie
+    }
+
+    // Maximizing player (AI)
+    if (isMaximizing) {
+        int bestScore = -1000;
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (board[i][j] == Player::None) {
+                    // Try this move
+                    board[i][j] = Player::O;
+
+                    // Recurse
+                    int score = minimax(board, depth + 1, false, alpha, beta);
+
+                    // Undo the move
+                    board[i][j] = Player::None;
+
+                    // Update best score
+                    bestScore = qMax(score, bestScore);
+
+                    // Alpha-beta pruning
+                    alpha = qMax(alpha, bestScore);
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return bestScore;
+    }
+    // Minimizing player (Human)
+    else {
+        int bestScore = 1000;
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (board[i][j] == Player::None) {
+                    // Try this move
+                    board[i][j] = Player::X;
+
+                    // Recurse
+                    int score = minimax(board, depth + 1, true, alpha, beta);
+
+                    // Undo the move
+                    board[i][j] = Player::None;
+
+                    // Update best score
+                    bestScore = qMin(score, bestScore);
+
+                    // Alpha-beta pruning
+                    beta = qMin(beta, bestScore);
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return bestScore;
+    }
+}
 bool GameLogic::isWin(const QVector<QVector<Player>>& board, Player player) const {
     // Check rows
     for (int i = 0; i < 3; ++i) {
