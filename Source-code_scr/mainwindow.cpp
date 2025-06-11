@@ -746,5 +746,3 @@ void MainWindow::playPreviousMove()
         }
     }
 }
-
-
