@@ -222,6 +222,7 @@ void MainWindow::setupGameModePage()
     aiButton->setStyleSheet("background-color: #9C27B0; color: white; font-size: 16px;");
     aiButton->setMinimumHeight(60);
 
+    
     // Add difficulty selection
     QLabel* difficultyLabel = new QLabel("AI Difficulty:");
     difficultyLabel->setAlignment(Qt::AlignCenter);
@@ -258,7 +259,7 @@ void MainWindow::setupGameModePage()
     // Connect signals
     connect(twoPlayerButton, &QPushButton::clicked, this, &MainWindow::startTwoPlayerGame);
     connect(aiButton, &QPushButton::clicked, this, &MainWindow::startAIGame);
-     connect(difficultyConfirmButton, &QPushButton::clicked, this, &MainWindow::handleDifficultyChanged);
+    connect(difficultyConfirmButton, &QPushButton::clicked, this, &MainWindow::handleDifficultyChanged);
     connect(backToMenuFromGameModeButton, &QPushButton::clicked, this, &MainWindow::showMenuPage);
 }
 

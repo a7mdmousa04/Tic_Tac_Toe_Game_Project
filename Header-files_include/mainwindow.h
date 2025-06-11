@@ -52,6 +52,9 @@ private:
     UserAuth* userAuth;
     GameLogic* gameLogic;
     QStackedWidget* stackedWidget;
+    QComboBox* difficultyComboBox;
+    QPushButton* difficultyConfirmButton;
+    void handleDifficultyChanged();
 
     // Login page widgets
     QWidget* loginPage;
