@@ -222,6 +222,23 @@ void MainWindow::setupGameModePage()
     aiButton->setStyleSheet("background-color: #9C27B0; color: white; font-size: 16px;");
     aiButton->setMinimumHeight(60);
 
+    // Add difficulty selection
+    QLabel* difficultyLabel = new QLabel("AI Difficulty:");
+    difficultyLabel->setAlignment(Qt::AlignCenter);
+    QFont difficultyFont = difficultyLabel->font();
+    difficultyFont.setPointSize(14);
+    difficultyLabel->setFont(difficultyFont);
+
+    difficultyComboBox = new QComboBox();
+    difficultyComboBox->addItem("Easy", static_cast<int>(AIDifficulty::Easy));
+    difficultyComboBox->addItem("Medium", static_cast<int>(AIDifficulty::Medium));
+    difficultyComboBox->addItem("Hard", static_cast<int>(AIDifficulty::Hard));
+    difficultyComboBox->addItem("Unbeatable", static_cast<int>(AIDifficulty::Unbeatable));
+    difficultyComboBox->setCurrentIndex(1); // Medium by default
+
+    difficultyConfirmButton = new QPushButton("Confirm Difficulty");
+    difficultyConfirmButton->setStyleSheet("background-color: #4CAF50; color: white;");
+
     backToMenuFromGameModeButton = new QPushButton("Back to Menu");
     backToMenuFromGameModeButton->setStyleSheet("color: #424242;");
 
@@ -231,13 +248,26 @@ void MainWindow::setupGameModePage()
     layout->addSpacing(10);
     layout->addWidget(aiButton);
     layout->addSpacing(20);
+    layout->addWidget(difficultyLabel);
+    layout->addWidget(difficultyComboBox);
+    layout->addWidget(difficultyConfirmButton);
+    layout->addSpacing(20);
     layout->addWidget(backToMenuFromGameModeButton);
     layout->addStretch();
 
     // Connect signals
     connect(twoPlayerButton, &QPushButton::clicked, this, &MainWindow::startTwoPlayerGame);
     connect(aiButton, &QPushButton::clicked, this, &MainWindow::startAIGame);
+     connect(difficultyConfirmButton, &QPushButton::clicked, this, &MainWindow::handleDifficultyChanged);
     connect(backToMenuFromGameModeButton, &QPushButton::clicked, this, &MainWindow::showMenuPage);
+}
+
+void MainWindow::handleDifficultyChanged() {
+    AIDifficulty difficulty = static_cast<AIDifficulty>(difficultyComboBox->currentData().toInt());
+    gameLogic->setDifficulty(difficulty);
+
+    QString difficultyName = difficultyComboBox->currentText();
+    QMessageBox::information(this, "Difficulty Set", "AI difficulty set to: " + difficultyName);
 }
 
 void MainWindow::setupGamePage()
@@ -530,8 +560,7 @@ void MainWindow::handleLogin()
     }
 }
 
-void MainWindow::handleSignup()
-{
+void MainWindow::handleSignup() {
     QString username = signupUsername->text();
     QString password = signupPassword->text();
     QString confirmPassword = signupConfirmPassword->text();
@@ -543,6 +572,47 @@ void MainWindow::handleSignup()
 
     if (password != confirmPassword) {
         signupStatusLabel->setText("Passwords do not match.");
+        return;
+    }
+
+    // Check username format
+    for (const QChar& ch : username) {
+        if (!ch.isLetterOrNumber() && ch != '_') {
+            signupStatusLabel->setText("Username can only contain letters, numbers, and underscores.");
+            return;
+        }
+    }
+
+    // Check password length
+    if (password.length() < 8) {
+        signupStatusLabel->setText("Password must be at least 8 characters long.");
+        return;
+    }
+
+    // Check for uppercase letter
+    bool hasUppercase = false;
+    for (const QChar& ch : password) {
+        if (ch.isUpper()) {
+            hasUppercase = true;
+            break;
+        }
+    }
+    if (!hasUppercase) {
+        signupStatusLabel->setText("Password must contain at least one uppercase letter.");
+        return;
+    }
+
+    // Check for special character
+    QString specialChars = "!@#$%^&*()_-+=<>?/[]{}|\\";
+    bool hasSpecial = false;
+    for (const QChar& ch : password) {
+        if (specialChars.contains(ch)) {
+            hasSpecial = true;
+            break;
+        }
+    }
+    if (!hasSpecial) {
+        signupStatusLabel->setText("Password must contain at least one special character.");
         return;
     }
 
@@ -566,8 +636,9 @@ void MainWindow::startTwoPlayerGame()
     showGamePage();
 }
 
-void MainWindow::startAIGame()
-{
+void MainWindow::startAIGame() {
+    AIDifficulty difficulty = static_cast<AIDifficulty>(difficultyComboBox->currentData().toInt());
+    gameLogic->setDifficulty(difficulty);
     gameLogic->newGame(true); // Start game with AI
     showGamePage();
 }
