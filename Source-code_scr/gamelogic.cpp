@@ -1,5 +1,3 @@
-
-
 // gamelogic.cpp - Game Logic Implementation
 #include "gamelogic.h"
 #include <QRandomGenerator>
@@ -490,6 +488,3 @@ void GameLogic::loadFromJson(const QJsonObject& gameData) {
     // Execute all moves to recreate the final state
     replayMove(moves.size());
 }
-
-
-
