@@ -1,8 +1,9 @@
-QT       += core gui
-
+QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
+
+INCLUDEPATH += $$PWD/Header-files_include
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -17,9 +18,7 @@ SOURCES += Source-code_scr/gamelogic.cpp \
            Source-code_scr/mainwindow.cpp \
            Source-code_scr/userauth.cpp
 
-
 FORMS += ui/mainwindow.ui
-
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
