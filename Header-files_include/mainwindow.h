@@ -11,7 +11,7 @@
 #include <QSlider>
 #include <QListWidget>
 #include <QJsonObject>
-
+#include <QComboBox>
 #include "userauth.h"
 #include "gamelogic.h"
 
