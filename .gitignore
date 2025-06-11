@@ -50,3 +50,4 @@ Thumbs.db
 # SQLite database files (if generated during testing)
 *.db
 *.sqlite
+
