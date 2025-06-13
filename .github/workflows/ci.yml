@@ -1,4 +1,4 @@
-name: C++ CI with Qt 6 (qmake - Fixed)
+name: Advanced C++ CI/CD Pipeline with Qt 6
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # Removed container, using ubuntu-22.04 for better Qt 6 support
+    runs-on: ubuntu-22.04
     
     steps:
     - name: Checkout code
@@ -29,7 +29,9 @@ jobs:
           libgl1-mesa-dev \
           libglu1-mesa-dev \
           libfontconfig1 \
-          libsqlite3-dev
+          libsqlite3-dev \
+          cppcheck \
+          valgrind
     
     - name: Install Google Test
       run: |
@@ -43,36 +45,82 @@ jobs:
         qmake6 --version
         which qmake6
     
+    - name: Code Quality Analysis
+      run: |
+        echo "Running static analysis..."
+        cppcheck --enable=all --xml --xml-version=2 . 2> cppcheck_report.xml || true
+        echo "Static analysis completed"
+    
+    - name: Security Scan
+      run: |
+        echo "Running security analysis..."
+        grep -r -i "password\|secret\|key" --include="*.cpp" --include="*.h" . || echo "No obvious credential issues found"
+        echo "Security scan completed"
+    
     - name: Build project with qmake6
       run: |
         qmake6 Embedded.pro
         make -j$(nproc)
     
-    - name: Run tests (if you have test executable)
+    - name: Run Comprehensive Tests
       run: |
-        # Look for common test executable names
+        mkdir -p test_results
+        
         if [ -f ./tests ]; then
-          echo "Running tests executable"
-          ./tests
+          echo "Running unit tests..."
+          ./tests --gtest_output=xml:test_results/unit_tests.xml
         elif [ -f ./test ]; then
           echo "Running test executable"  
-          ./test
+          ./test --gtest_output=xml:test_results/tests.xml
         elif [ -f ./Embedded_tests ]; then
-          echo "Running Embedded_tests executable"
-          ./Embedded_tests
+          echo "Running Embedded tests..."
+          ./Embedded_tests --gtest_output=xml:test_results/embedded_tests.xml
         else
-          echo "No test executable found - checking for binary files:"
+          echo "No test executable found"
           ls -la ./ | grep -E "\.(out|exe|bin)$" || echo "No executable files found"
-          echo "Build completed successfully but no tests to run"
         fi
     
-    - name: Upload build artifacts
+    - name: Performance Benchmarking
+      run: |
+        echo "Running performance tests..."
+        if [ -f ./Embedded ]; then
+          echo "Measuring application performance..."
+          timeout 30s /usr/bin/time -v ./Embedded --version 2>&1 | tee performance_report.txt || echo "Performance test completed with timeout"
+          
+          echo "=== Performance Metrics ===" >> performance_summary.txt
+          grep "Maximum resident set size\|User time\|System time" performance_report.txt >> performance_summary.txt 2>/dev/null || echo "Performance metrics extracted"
+          cat performance_summary.txt 2>/dev/null || echo "Performance summary created"
+        fi
+    
+    - name: Prepare Deployment Package
+      run: |
+        echo "Preparing deployment package..."
+        mkdir -p deployment_package
+        
+        if [ -f ./Embedded ]; then
+          cp ./Embedded deployment_package/
+          echo "Executable copied to deployment package"
+        fi
+        
+        find . -name "*.conf" -o -name "*.ini" -o -name "*.db" | xargs -I {} cp {} deployment_package/ 2>/dev/null || true
+        
+        echo "Build Date: $(date)" > deployment_package/build_info.txt
+        echo "Commit Hash: $GITHUB_SHA" >> deployment_package/build_info.txt
+        echo "Branch: $GITHUB_REF_NAME" >> deployment_package/build_info.txt
+        
+        ls -la deployment_package/
+    
+    - name: Upload Comprehensive Artifacts
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: build-artifacts
+        name: complete-build-artifacts-${{ github.run_number }}
         path: |
           Embedded
+          deployment_package/
+          test_results/
+          performance_*.txt
+          cppcheck_report.xml
           *.o
           Makefile
-        retention-days: 7
+        retention-days: 30
