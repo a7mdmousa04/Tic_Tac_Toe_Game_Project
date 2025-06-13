@@ -124,3 +124,90 @@ jobs:
           *.o
           Makefile
         retention-days: 30
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: complete-build-artifacts-${{ github.run_number }}
+        path: ./artifacts
+    
+    - name: Prepare Deployment Directory
+      run: |
+        echo "Preparing deployment directory..."
+        mkdir -p deployment
+        
+        # Copy executable and deployment package
+        cp artifacts/Embedded deployment/ 2>/dev/null || true
+        cp -r artifacts/deployment_package/* deployment/ 2>/dev/null || true
+        
+        # Make executable runnable
+        chmod +x deployment/Embedded || true
+        
+        # Create deployment manifest
+        echo "Deployment Information" > deployment/DEPLOYMENT_INFO.txt
+        echo "Build Date: $(date)" >> deployment/DEPLOYMENT_INFO.txt
+        echo "Version: v${{ github.run_number }}" >> deployment/DEPLOYMENT_INFO.txt
+        echo "Commit: ${{ github.sha }}" >> deployment/DEPLOYMENT_INFO.txt
+        
+        ls -la deployment/
+    
+    - name: Create Release Archive (.zip)
+      run: |
+        cd deployment
+        zip -r ../tic-tac-toe-v${{ github.run_number }}.zip ./*
+        cd ..
+        echo "Release archive created: tic-tac-toe-v${{ github.run_number }}.zip"
+    
+    - name: Create GitHub Release Tag
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag -a v${{ github.run_number }} -m "Automated release v${{ github.run_number }}"
+        git push origin v${{ github.run_number }}
+    
+    - name: Deploy Application
+      run: |
+        echo "Deploying Tic Tac Toe application..."
+        DEPLOY_DIR="/tmp/tic-tac-toe-production"
+        mkdir -p $DEPLOY_DIR
+        cp -r deployment/* $DEPLOY_DIR/
+        echo "Application deployed successfully to $DEPLOY_DIR"
+    
+    - name: Verify Deployment
+      run: |
+        if [ -f /tmp/tic-tac-toe-production/Embedded ]; then
+          echo "Deployment verification: SUCCESS"
+          /tmp/tic-tac-toe-production/Embedded --version || echo "Version check completed"
+        else
+          echo "Deployment verification: FAILED"
+          exit 1
+        fi
+    
+    - name: Upload Release Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-package-v${{ github.run_number }}
+        path: |
+          tic-tac-toe-v${{ github.run_number }}.zip
+          deployment/
+        retention-days: 30
+
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        body: |
+          Automated release for build ${{ github.run_number }}.
+          See attached files for the game executable and deployment package.
+        files: |
+          tic-tac-toe-v${{ github.run_number }}.zip
+          deployment/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
