@@ -28,20 +28,12 @@ jobs:
           cmake \
           g++ \
           build-essential \
-          libgtest-dev \
           libgl1-mesa-dev \
           libglu1-mesa-dev \
           libfontconfig1 \
           libsqlite3-dev \
           cppcheck \
           valgrind
-    
-    - name: Install Google Test
-      run: |
-        cd /usr/src/gtest
-        sudo cmake CMakeLists.txt
-        sudo make -j$(nproc)
-        sudo cp lib/*.a /usr/lib 2>/dev/null || sudo cp *.a /usr/lib
     
     - name: Verify Qt 6 installation
       run: |
@@ -71,13 +63,13 @@ jobs:
         
         if [ -f ./tests ]; then
           echo "Running unit tests..."
-          ./tests --gtest_output=xml:test_results/unit_tests.xml
+          ./tests -xml -o test_results/unit_tests.xml
         elif [ -f ./test ]; then
           echo "Running test executable"  
-          ./test --gtest_output=xml:test_results/tests.xml
+          ./test -xml -o test_results/tests.xml
         elif [ -f ./Embedded_tests ]; then
           echo "Running Embedded tests..."
-          ./Embedded_tests --gtest_output=xml:test_results/embedded_tests.xml
+          ./Embedded_tests -xml -o test_results/embedded_tests.xml
         else
           echo "No test executable found"
           ls -la ./ | grep -E "\.(out|exe|bin)$" || echo "No executable files found"
