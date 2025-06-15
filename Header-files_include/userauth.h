@@ -17,6 +17,7 @@ struct User {
 };
 
 class UserAuth {
+    friend class IntegrationTest;
 public:
     UserAuth();
     ~UserAuth();

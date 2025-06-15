@@ -16,6 +16,7 @@ HEADERS += Header-files_include/gamelogic.h \
 SOURCES += Source-code_scr/gamelogic.cpp \
            Source-code_scr/main.cpp \
            Source-code_scr/mainwindow.cpp \
+           Source-code_scr/test_gamelogic.cpp \
            Source-code_scr/userauth.cpp
 
 FORMS += ui/mainwindow.ui

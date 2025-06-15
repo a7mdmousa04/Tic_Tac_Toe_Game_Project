@@ -22,7 +22,7 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
+    friend class IntegrationTest;
 public:
     explicit MainWindow(UserAuth* auth, QWidget *parent = nullptr);
     ~MainWindow();
