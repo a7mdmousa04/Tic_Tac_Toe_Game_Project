@@ -488,3 +488,4 @@ void GameLogic::loadFromJson(const QJsonObject& gameData) {
     // Execute all moves to recreate the final state
     replayMove(moves.size());
 }
+
