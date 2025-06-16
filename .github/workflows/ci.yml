@@ -33,7 +33,8 @@ jobs:
           libfontconfig1 \
           libsqlite3-dev \
           cppcheck \
-          valgrind
+          valgrind \
+          xvfb
     
     - name: Verify Qt 6 installation
       run: |
@@ -68,7 +69,7 @@ jobs:
             qmake6 Unit-tests_tests.pro
             make -j$(nproc)
             if [ -f "./Unit-tests_tests" ]; then
-              ./Unit-tests_tests -xml -o ../test_results/unit_tests.xml || exit 1
+              xvfb-run -a ./Unit-tests_tests -xml -o ../test_results/unit_tests.xml || exit 1
             else
               echo "Unit test executable not found"
               exit 1
@@ -90,7 +91,7 @@ jobs:
             qmake6 Integration_Test.pro
             make -j$(nproc)
             if [ -f "./Integration_Test" ]; then
-              ./Integration_Test -xml -o ../test_results/integration_tests.xml || exit 1
+              xvfb-run -a ./Integration_Test -xml -o ../test_results/integration_tests.xml || exit 1
             else
               echo "Integration test executable not found"
               exit 1
@@ -239,4 +240,3 @@ jobs:
           deployment/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
