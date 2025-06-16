@@ -2,9 +2,9 @@ name: Advanced C++ CI/CD Pipeline with Qt 6
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "**" ]       # Trigger on any branch push
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "**" ]       # Trigger on any branch PR
 
 permissions:
   contents: write
@@ -61,18 +61,48 @@ jobs:
       run: |
         mkdir -p test_results
         
-        if [ -f ./tests ]; then
-          echo "Running unit tests..."
-          ./tests -xml -o test_results/unit_tests.xml
-        elif [ -f ./test ]; then
-          echo "Running test executable"  
-          ./test -xml -o test_results/tests.xml
-        elif [ -f ./Embedded_tests ]; then
-          echo "Running Embedded tests..."
-          ./Embedded_tests -xml -o test_results/embedded_tests.xml
+        echo "Building and running Unit Tests..."
+        if [ -d "./Unit-tests_tests" ]; then
+          cd Unit-tests_tests
+          if [ -f "Unit-tests_tests.pro" ]; then
+            qmake6 Unit-tests_tests.pro
+            make -j$(nproc)
+            if [ -f "./Unit-tests_tests" ]; then
+              ./Unit-tests_tests -xml -o ../test_results/unit_tests.xml || exit 1
+            else
+              echo "Unit test executable not found"
+              exit 1
+            fi
+          else
+            echo "Unit-tests_tests.pro not found"
+            exit 1
+          fi
+          cd ..
         else
-          echo "No test executable found"
-          ls -la ./ | grep -E "\.(out|exe|bin)$" || echo "No executable files found"
+          echo "Unit-tests_tests directory not found"
+          exit 1
+        fi
+        
+        echo "Building and running Integration Tests..."
+        if [ -d "./Integration_Test" ]; then
+          cd Integration_Test
+          if [ -f "Integration_Test.pro" ]; then
+            qmake6 Integration_Test.pro
+            make -j$(nproc)
+            if [ -f "./Integration_Test" ]; then
+              ./Integration_Test -xml -o ../test_results/integration_tests.xml || exit 1
+            else
+              echo "Integration test executable not found"
+              exit 1
+            fi
+          else
+            echo "Integration_Test.pro not found"
+            exit 1
+          fi
+          cd ..
+        else
+          echo "Integration_Test directory not found"
+          exit 1
         fi
     
     - name: Performance Benchmarking
@@ -209,5 +239,3 @@ jobs:
           deployment/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
