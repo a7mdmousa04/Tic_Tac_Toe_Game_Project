@@ -1,4 +1,3 @@
-// mainwindow.h - Main Window Class
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -12,6 +11,7 @@
 #include <QListWidget>
 #include <QJsonObject>
 #include <QComboBox>
+#include <QButtonGroup>
 #include "userauth.h"
 #include "gamelogic.h"
 
@@ -22,9 +22,9 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    friend class IntegrationTest;
+
 public:
-    explicit MainWindow(UserAuth* auth, QWidget *parent = nullptr);
+    explicit MainWindow(UserAuth* auth, QWidget* parent = nullptr);
     ~MainWindow();
 
 private slots:
@@ -48,12 +48,14 @@ private slots:
     void playPreviousMove();
 
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
     UserAuth* userAuth;
     GameLogic* gameLogic;
     QStackedWidget* stackedWidget;
     QComboBox* difficultyComboBox;
     QPushButton* difficultyConfirmButton;
+    QButtonGroup* playerSymbolGroup;
+    bool playerIsX; // Track player's chosen symbol
     void handleDifficultyChanged();
 
     // Login page widgets
@@ -73,7 +75,7 @@ private:
     QPushButton* goToLoginButton;
     QLabel* signupStatusLabel;
 
-     // Menu page widgets
+    // Menu page widgets
     QWidget* menuPage;
     QPushButton* playButton;
     QPushButton* historyButton;
@@ -104,7 +106,7 @@ private:
     QPushButton* nextMoveButton;
     QPushButton* boardReplayButtons[3][3];
     QGridLayout* replayBoardLayout;
-   
+
     void setupLoginPage();
     void setupSignupPage();
     void setupMenuPage();
