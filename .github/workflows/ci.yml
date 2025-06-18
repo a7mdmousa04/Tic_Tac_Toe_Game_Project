@@ -112,26 +112,93 @@ jobs:
         echo "Running performance tests..."
         if [ -f ./Embedded ]; then
           echo "Measuring application performance..."
-          timeout 30s /usr/bin/time -v ./Embedded --version 2>&1 | tee performance_report.txt || echo "Performance test completed with timeout"
           
-          echo "=== Performance Metrics ===" >> performance_summary.txt
+          # Use high-precision timing with millisecond resolution from start
+          echo "=== Performance Metrics ===" > performance_summary.txt
           
-          # Extract and convert user time to milliseconds
-          USER_TIME_SEC=$(grep "User time" performance_report.txt | awk '{print $4}' | sed 's/[^0-9.]//g' 2>/dev/null || echo "0")
-          USER_TIME_MS=$(echo "scale=2; $USER_TIME_SEC * 1000" | bc 2>/dev/null || echo "0")
-          echo "User time: ${USER_TIME_MS} ms" >> performance_summary.txt
+          # Method 1: Using time command with millisecond precision
+          echo "Starting precise timing measurement..."
+          START_TIME=$(date +%s%3N)  # milliseconds since epoch
           
-          # Extract and convert system time to milliseconds
-          SYSTEM_TIME_SEC=$(grep "System time" performance_report.txt | awk '{print $4}' | sed 's/[^0-9.]//g' 2>/dev/null || echo "0")
-          SYSTEM_TIME_MS=$(echo "scale=2; $SYSTEM_TIME_SEC * 1000" | bc 2>/dev/null || echo "0")
-          echo "System time: ${SYSTEM_TIME_MS} ms" >> performance_summary.txt
+          # Run the application and capture both timing and memory info
+          timeout 30s bash -c '
+            exec 3>&1 4>&2
+            TIMEFORMAT="%3R %3U %3S"
+            { time ./Embedded --version >/dev/null 2>&4; } 2>&1 >&3 | {
+              read REAL_TIME USER_TIME SYS_TIME
+              USER_TIME_MS=$(echo "scale=2; $USER_TIME * 1000" | bc 2>/dev/null || echo "0")
+              SYS_TIME_MS=$(echo "scale=2; $SYS_TIME * 1000" | bc 2>/dev/null || echo "0")
+              REAL_TIME_MS=$(echo "scale=2; $REAL_TIME * 1000" | bc 2>/dev/null || echo "0")
+              echo "TIMING_DATA:USER:$USER_TIME_MS:SYSTEM:$SYS_TIME_MS:REAL:$REAL_TIME_MS"
+            }
+          ' 2>&1 | tee timing_output.txt || echo "Timing completed with potential timeout"
           
-          # Extract memory usage (keep in original format)
-          MAX_RSS=$(grep "Maximum resident set size" performance_report.txt | awk '{print $6}' 2>/dev/null || echo "0")
-          echo "Maximum resident set size: ${MAX_RSS} kbytes" >> performance_summary.txt
+          END_TIME=$(date +%s%3N)  # milliseconds since epoch
+          WALL_CLOCK_MS=$((END_TIME - START_TIME))
           
-          echo "Performance metrics converted to milliseconds:"
+          # Extract timing data from our custom output
+          if grep -q "TIMING_DATA:" timing_output.txt; then
+            TIMING_LINE=$(grep "TIMING_DATA:" timing_output.txt | tail -1)
+            USER_TIME_MS=$(echo "$TIMING_LINE" | sed -n 's/.*USER:\([^:]*\):.*/\1/p')
+            SYS_TIME_MS=$(echo "$TIMING_LINE" | sed -n 's/.*SYSTEM:\([^:]*\):.*/\1/p')
+            REAL_TIME_MS=$(echo "$TIMING_LINE" | sed -n 's/.*REAL:\([^:]*\):.*/\1/p')
+            
+            echo "User time: ${USER_TIME_MS} ms" >> performance_summary.txt
+            echo "System time: ${SYS_TIME_MS} ms" >> performance_summary.txt
+            echo "Real time: ${REAL_TIME_MS} ms" >> performance_summary.txt
+          else
+            echo "User time: N/A ms" >> performance_summary.txt
+            echo "System time: N/A ms" >> performance_summary.txt
+            echo "Real time: N/A ms" >> performance_summary.txt
+          fi
+          
+          echo "Wall clock time: ${WALL_CLOCK_MS} ms" >> performance_summary.txt
+          
+          # Get memory usage with /usr/bin/time
+          echo "Measuring memory usage..."
+          timeout 30s /usr/bin/time -v ./Embedded --version 2>&1 | tee memory_report.txt || echo "Memory measurement completed"
+          
+          # Extract memory information
+          MAX_RSS=$(grep "Maximum resident set size" memory_report.txt | awk '{print $6}' 2>/dev/null || echo "N/A")
+          if [ "$MAX_RSS" != "N/A" ]; then
+            echo "Maximum resident set size: ${MAX_RSS} KB" >> performance_summary.txt
+          else
+            echo "Maximum resident set size: N/A KB" >> performance_summary.txt
+          fi
+          
+          # Additional memory metrics
+          AVG_RSS=$(grep "Average resident set size" memory_report.txt | awk '{print $6}' 2>/dev/null || echo "N/A")
+          if [ "$AVG_RSS" != "N/A" ]; then
+            echo "Average resident set size: ${AVG_RSS} KB" >> performance_summary.txt
+          fi
+          
+          PAGE_FAULTS=$(grep "Page faults" memory_report.txt | awk '{print $3}' 2>/dev/null || echo "N/A")
+          if [ "$PAGE_FAULTS" != "N/A" ]; then
+            echo "Page faults: ${PAGE_FAULTS}" >> performance_summary.txt
+          fi
+          
+          echo "" >> performance_summary.txt
+          echo "=== Performance Summary ===" >> performance_summary.txt
+          if [ "$USER_TIME_MS" != "N/A" ] && [ "$SYS_TIME_MS" != "N/A" ]; then
+            TOTAL_CPU_MS=$(echo "scale=2; $USER_TIME_MS + $SYS_TIME_MS" | bc 2>/dev/null || echo "N/A")
+            echo "Total CPU time: ${TOTAL_CPU_MS} ms" >> performance_summary.txt
+            
+            if [ "$REAL_TIME_MS" != "N/A" ] && [ "$REAL_TIME_MS" != "0" ]; then
+              CPU_USAGE=$(echo "scale=2; ($TOTAL_CPU_MS / $REAL_TIME_MS) * 100" | bc 2>/dev/null || echo "N/A")
+              echo "CPU usage: ${CPU_USAGE}%" >> performance_summary.txt
+            fi
+          fi
+          
+          echo "" >> performance_summary.txt
+          echo "=== Measurement Details ===" >> performance_summary.txt
+          echo "Timing method: bash built-in time + date milliseconds" >> performance_summary.txt
+          echo "Memory method: /usr/bin/time -v" >> performance_summary.txt
+          echo "Timeout: 30 seconds" >> performance_summary.txt
+          
           cat performance_summary.txt 2>/dev/null || echo "Performance summary created"
+          
+          # Clean up temporary files
+          rm -f timing_output.txt memory_report.txt 2>/dev/null || true
         fi
     
     - name: Prepare Deployment Package
