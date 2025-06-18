@@ -489,7 +489,7 @@ void MainWindow::setupGameModePage() {
     difficultyComboBox->setCurrentIndex(1); // Medium by default
     difficultyComboBox->setStyleSheet(
                 "QComboBox {"
-                "    border: 2px solid rgb(44, 62, 80);"
+                "    border: 2px solid rgb(255, 255, 255);"
                 "    border-radius: 15px;"
                 "    padding: 8px 18px 8px 12px;"
                 "    min-width: 120px;"
