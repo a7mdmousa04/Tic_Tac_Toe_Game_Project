@@ -106,7 +106,7 @@ jobs:
           exit 1
         fi
     
-   -  name: Performance Benchmarking
+    - name: Performance Benchmarking
         run: |
           echo "Running performance tests..."
           if [ -f ./Embedded ]; then
