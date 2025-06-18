@@ -21,6 +21,7 @@ QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
+    friend class IntegrationTest 
     Q_OBJECT
 
 public:
