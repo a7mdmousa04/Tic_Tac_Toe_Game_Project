@@ -107,35 +107,35 @@ jobs:
         fi
     
     - name: Performance Benchmarking
-        run: |
-          echo "Running performance tests..."
-          if [ -f ./Embedded ]; then
-            echo "Measuring application performance with millisecond precision..."
-            
-            # Simple millisecond timing
-            start_ms=$(date +%s%3N)
-            ./Embedded --version 2>&1 | tee performance_output.txt
-            end_ms=$(date +%s%3N)
-            execution_time=$((end_ms - start_ms))
-            
-            echo "=== Performance Results ===" | tee performance_summary.txt
-            echo "Execution time: ${execution_time} milliseconds" | tee -a performance_summary.txt
-            
-            # Multiple runs for average
-            total=0
-            for i in {1..10}; do
-              start=$(date +%s%3N)
-              ./Embedded --version >/dev/null 2>&1
-              end=$(date +%s%3N)
-              runtime=$((end - start))
-              total=$((total + runtime))
-              echo "Run $i: ${runtime} ms" | tee -a performance_summary.txt
-            done
-            average=$((total / 10))
-            echo "Average over 10 runs: ${average} milliseconds" | tee -a performance_summary.txt
-            
-            cat performance_summary.txt
-          fi
+      run: |
+        echo "Running performance tests..."
+        if [ -f ./Embedded ]; then
+          echo "Measuring application performance with millisecond precision..."
+          
+          # Simple millisecond timing
+          start_ms=$(date +%s%3N)
+          ./Embedded --version 2>&1 | tee performance_output.txt
+          end_ms=$(date +%s%3N)
+          execution_time=$((end_ms - start_ms))
+          
+          echo "=== Performance Results ===" | tee performance_summary.txt
+          echo "Execution time: ${execution_time} milliseconds" | tee -a performance_summary.txt
+          
+          # Multiple runs for average
+          total=0
+          for i in {1..10}; do
+            start=$(date +%s%3N)
+            ./Embedded --version >/dev/null 2>&1
+            end=$(date +%s%3N)
+            runtime=$((end - start))
+            total=$((total + runtime))
+            echo "Run $i: ${runtime} ms" | tee -a performance_summary.txt
+          done
+          average=$((total / 10))
+          echo "Average over 10 runs: ${average} milliseconds" | tee -a performance_summary.txt
+          
+          cat performance_summary.txt
+        fi
     
     - name: Prepare Deployment Package
       run: |
