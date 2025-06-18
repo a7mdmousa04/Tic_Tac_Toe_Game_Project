@@ -34,7 +34,8 @@ jobs:
           libsqlite3-dev \
           cppcheck \
           valgrind \
-          xvfb
+          xvfb \
+          bc
     
     - name: Verify Qt 6 installation
       run: |
@@ -110,19 +111,27 @@ jobs:
       run: |
         echo "Running performance tests..."
         if [ -f ./Embedded ]; then
-          # Test with help command (usually doesn't need GUI)
-          echo "Testing help command:"
-          start_ms=$(date +%s%3N)
-          QT_QPA_PLATFORM=offscreen ./Embedded -h 2>&1 || echo "Help command completed"
-          end_ms=$(date +%s%3N)
-          echo "Help command time: $((end_ms - start_ms)) milliseconds"
+          echo "Measuring application performance..."
+          timeout 30s /usr/bin/time -v ./Embedded --version 2>&1 | tee performance_report.txt || echo "Performance test completed with timeout"
           
-          # Test version with offscreen platform
-          echo "Testing version with offscreen platform:"
-          start_ms=$(date +%s%3N)
-          QT_QPA_PLATFORM=offscreen ./Embedded --version 2>&1 || echo "Version command completed"
-          end_ms=$(date +%s%3N)
-          echo "Version command time: $((end_ms - start_ms)) milliseconds"
+          echo "=== Performance Metrics ===" >> performance_summary.txt
+          
+          # Extract and convert user time to milliseconds
+          USER_TIME_SEC=$(grep "User time" performance_report.txt | awk '{print $4}' | sed 's/[^0-9.]//g' 2>/dev/null || echo "0")
+          USER_TIME_MS=$(echo "scale=2; $USER_TIME_SEC * 1000" | bc 2>/dev/null || echo "0")
+          echo "User time: ${USER_TIME_MS} ms" >> performance_summary.txt
+          
+          # Extract and convert system time to milliseconds
+          SYSTEM_TIME_SEC=$(grep "System time" performance_report.txt | awk '{print $4}' | sed 's/[^0-9.]//g' 2>/dev/null || echo "0")
+          SYSTEM_TIME_MS=$(echo "scale=2; $SYSTEM_TIME_SEC * 1000" | bc 2>/dev/null || echo "0")
+          echo "System time: ${SYSTEM_TIME_MS} ms" >> performance_summary.txt
+          
+          # Extract memory usage (keep in original format)
+          MAX_RSS=$(grep "Maximum resident set size" performance_report.txt | awk '{print $6}' 2>/dev/null || echo "0")
+          echo "Maximum resident set size: ${MAX_RSS} kbytes" >> performance_summary.txt
+          
+          echo "Performance metrics converted to milliseconds:"
+          cat performance_summary.txt 2>/dev/null || echo "Performance summary created"
         fi
     
     - name: Prepare Deployment Package
