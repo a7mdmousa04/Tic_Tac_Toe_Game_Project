@@ -107,23 +107,23 @@ jobs:
         fi
     
     - name: Performance Benchmarking
-        run: |
-          echo "Running performance tests..."
-          if [ -f ./Embedded ]; then
-            # Test with help command (usually doesn't need GUI)
-            echo "Testing help command:"
-            start_ms=$(date +%s%3N)
-            QT_QPA_PLATFORM=offscreen ./Embedded -h 2>&1 || echo "Help command completed"
-            end_ms=$(date +%s%3N)
-            echo "Help command time: $((end_ms - start_ms)) milliseconds"
-            
-            # Test version with offscreen platform
-            echo "Testing version with offscreen platform:"
-            start_ms=$(date +%s%3N)
-            QT_QPA_PLATFORM=offscreen ./Embedded --version 2>&1 || echo "Version command completed"
-            end_ms=$(date +%s%3N)
-            echo "Version command time: $((end_ms - start_ms)) milliseconds"
-          fi
+      run: |
+        echo "Running performance tests..."
+        if [ -f ./Embedded ]; then
+          # Test with help command (usually doesn't need GUI)
+          echo "Testing help command:"
+          start_ms=$(date +%s%3N)
+          QT_QPA_PLATFORM=offscreen ./Embedded -h 2>&1 || echo "Help command completed"
+          end_ms=$(date +%s%3N)
+          echo "Help command time: $((end_ms - start_ms)) milliseconds"
+          
+          # Test version with offscreen platform
+          echo "Testing version with offscreen platform:"
+          start_ms=$(date +%s%3N)
+          QT_QPA_PLATFORM=offscreen ./Embedded --version 2>&1 || echo "Version command completed"
+          end_ms=$(date +%s%3N)
+          echo "Version command time: $((end_ms - start_ms)) milliseconds"
+        fi
     
     - name: Prepare Deployment Package
       run: |
