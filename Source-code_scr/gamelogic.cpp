@@ -277,21 +277,6 @@ QVector<QPair<int, int>> GameLogic::getAvailableMoves(const QVector<QVector<Play
     return moves;
 }
 
-int GameLogic::evaluateBoard(const QVector<QVector<Player>>& board) {
-    // This is a simple evaluation function
-    // Positive score favors AI (O), negative score favors Human (X)
-
-    // Check for wins
-    if (isWin(board, Player::O)) {
-        return 10;
-    }
-    if (isWin(board, Player::X)) {
-        return -10;
-    }
-
-    return 0; // Neutral position
-}
-
 Player GameLogic::getCell(int row, int col) const {
     if (row >= 0 && row < 3 && col >= 0 && col < 3) {
         return board[row][col];

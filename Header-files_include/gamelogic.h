@@ -63,7 +63,6 @@ private:
     bool checkGameOver();
     void makeAIMove();
     int minimax(QVector<QVector<Player>>& board, int depth, bool isMaximizing, int alpha, int beta);
-    int evaluateBoard(const QVector<QVector<Player>>& board);
     QVector<QPair<int, int>> getAvailableMoves(const QVector<QVector<Player>>& board) const;
     bool isWin(const QVector<QVector<Player>>& board, Player player) const;
 
